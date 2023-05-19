@@ -1,36 +1,26 @@
-const puppeteer = require('puppeteer');
+
 const fs = require('fs');
 const https = require('https');
 
-const baseUrl = 'https://www.pokemon.com/us/pokedex/'
 
-async function scrapeDescription(from, to) {
+
+async function scrapePokemonDescription(number) {
+    const response = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${number}`)
+
+    const json = await response.json();
+    const allEntries = json.flavor_text_entries
+    const flavor_text_entry = allEntries.find(entry => entry.language.name === 'en' && entry.version.name === 'omega-ruby')
+    const name = json.names.find(n => n.language.name === 'en').name
+
+    return `${name}:\n${flavor_text_entry.flavor_text}`;
+}
+
+async function scrapePokemonDescriptions(from, to) {
     const pokemonAmount = to - from;
 
     for (let i = 0; i < pokemonAmount; i++) {
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
-        const pokemonID = i+from;
-        const pokemonUrl = baseUrl + pokemonID;
 
-        console.log(pokemonUrl)
-        await page.goto(pokemonUrl);
-
-        await page.waitForSelector('body > div.container.pokedex > section.section.pokedex-pokemon-details > div.column-6.push-7 > div > div.version-descriptions.active > p.version-x.active')
-
-        const descriptionX = await page.evaluate(
-            () => document.querySelector('body > div.container.pokedex > section.section.pokedex-pokemon-details > div.column-6.push-7 > div > div.version-descriptions.active > p.version-x.active').innerText.trim()
-        );
         
-        await page.waitForSelector('body > div.container.pokedex > section.section.pokedex-pokemon-details > div.column-6.push-7 > div > div.version-descriptions.active > p.version-y')
-        const descriptionY = await page.evaluate(
-            () => document.querySelector('body > div.container.pokedex > section.section.pokedex-pokemon-details > div.column-6.push-7 > div > div.version-descriptions.active > p.version-y').innerText.trim()
-        );
-
-        console.log(descriptionY)
-        console.log(descriptionX)
-       
-        await browser.close();
     }
 }
 
@@ -41,6 +31,13 @@ async function writeAFile(filePath) {
     console.log(file);
 }
 
-writeAFile('./pokemon.json');
+async function test() {
+
+    const pikachuDescription = await scrapePokemonDescription(701);
+
+    console.log(pikachuDescription)
+}
+
+test();
 
 // scrapeDescription(1, 10);
